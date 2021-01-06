@@ -1,0 +1,17 @@
+
+
+server:
+  port: 8890
+  servlet:
+    session:
+      timeout: 60
+  tomcat:
+    max-threads: 800
+
+
+
+logging:
+  pattern:
+    console: "%d{yyyy/MM/dd-HH:mm:ss} %-40thread %-50method line:%-6line %-20logger %-5level: %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} ${LOG_LEVEL_PATTERN:-%5p} ${PID:- } --- [%t] %-40.40logger{39} %-20method [lineno:%line]: %m%n${LOG_EXCEPTION_CONVERSION_WORD:%wEx}"
+  file: /data/logs/test-123/test.log
