@@ -7,19 +7,64 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.lang.management.ManagementFactory;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/test")
 public class Controller {
     private static Logger logger = LoggerFactory.getLogger(Controller.class);
 
-    public static void test_1() {
+    public void runShell(String cmd) {
+        logger.info("******** cmd is: {}", cmd);
+        String[] shell = new String[]{"/bin/bash", "-c", cmd};
         try {
-            JavaShellTest javaShellTest = new JavaShellTest();
-            javaShellTest.runShell("/home/www/test123/test.sh", "test_1_sid.log");
+            Process process = Runtime.getRuntime().exec(shell);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            while (true) {
+                String line = reader.readLine();
+                if (line == null) {
+                    break;
+                } else {
+                    logger.info("###: " + line);
+                }
+            }
+
+            logger.info("###: *********** command is over ...");
+
+            process.waitFor(10, TimeUnit.MINUTES);
+            process.destroy();
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("Failed to run shell: {}", e.getMessage());
+        }
+
+    }
+
+    public void test_1() {
+        try {
+            String cmd = "ps j -A | grep " + getPid() + " | grep -v grep";
+            runShell(cmd);
             JNAPGID.setsid();
-            javaShellTest.runShell("/home/www/test123/test.sh", "test_2_sid.log");
+            runShell(cmd);
+        } catch (Exception e) {
+            e.printStackTrace();
+            logger.error("****** error: {}", e.getMessage());
+        }
+    }
+
+    public void test_2() {
+        try {
+            String pid = getPid();
+            String cmd = "ps j -A | grep " + pid + " | grep -v grep";
+
+            runShell(cmd);
+            int pidI = Integer.parseInt(pid);
+            JNAPGID.setpgid(0, pidI);
+            runShell(cmd);
+
         } catch (Exception e) {
             e.printStackTrace();
             logger.error("****** error: {}", e.getMessage());
@@ -28,26 +73,13 @@ public class Controller {
 
     }
 
-
-    public static void test_2() {
-        try {
-            JavaShellTest javaShellTest = new JavaShellTest();
-            javaShellTest.runShell("/home/www/test123/test.sh", "test_1_pgid.log");
-
-            String name = ManagementFactory.getRuntimeMXBean().getName();
-            logger.info("****** name: {}", name);
-            // get pid
-            String pid = name.split("@")[0];
-            logger.info("***** Pid is: {}", pid);
-            int pidI = Integer.parseInt(pid);
-            JNAPGID.setpgid(0, pidI);
-            javaShellTest.runShell("/home/www/test123/test.sh", "test_2_pgid.log");
-        } catch (Exception e) {
-            e.printStackTrace();
-            logger.error("****** error: {}", e.getMessage());
-        }
-
-
+    public String getPid() {
+        String name = ManagementFactory.getRuntimeMXBean().getName();
+        logger.info("****** name: {}", name);
+        // get pid
+        String pid = name.split("@")[0];
+        logger.info("****** pid: {}", pid);
+        return pid;
     }
 
     @RequestMapping("/ping")
@@ -81,6 +113,7 @@ public class Controller {
             String text = JNAPGID.sayHello(jsonObject.getString("data"));
             logger.info("*************** result is: {}", text);
 
+            runShell("ls -alh");
 
         } catch (Exception e) {
             e.printStackTrace();

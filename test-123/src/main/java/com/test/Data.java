@@ -1,5 +1,7 @@
 package com.test;
 
+import com.test.System.EPlatform;
+import com.test.System.OSinfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -19,44 +21,41 @@ public class Data {
 
     public static void main(String args[]) {
         ConfigurableApplicationContext context = SpringApplication.run(Data.class, args);
-        logger.info("********** main dir:{}", System.getProperty("user.dir"));
-        logger.info("********** main class dir URI: {}", Data.class.getResource("").toString());
-        logger.info("********** main class dir PATH: {}", Data.class.getResource("/").getPath());
-        loadLib();
-
+         loadLib();
     }
 
 
+    /**
+     * load the JNA lib
+     */
     public static void loadLib() {
         try {
+            EPlatform platform = OSinfo.getOSname();
+            logger.info("*********+++++++++======================= operation system is: {}", platform.toString());
+            // set default to mac
             String libName = "libTools.jnilib";
             URL url = Data.class.getResource("/JNA/libTools.jnilib");
+            if (platform.equals(EPlatform.Mac_OS) || platform.equals(EPlatform.Mac_OS_X)) {
+                libName = "libTools.jnilib";
+                url = Data.class.getResource("/JNA/libTools.jnilib");
+            } else if (platform.equals(EPlatform.Linux)) {
+                libName = "libTools.so";
+                url = Data.class.getResource("/JNA/libTools.so");
+            }
+
             logger.info("*********+++++++++======================= url path: {}", url.getPath());
             File nativeLibTmpFile = new File(libName);
             nativeLibTmpFile.deleteOnExit();
 
-            InputStream in = Data.class.getResourceAsStream("/JNA/libTools.jnilib");
+            InputStream in = url.openStream();
+            // InputStream in = Data.class.getResourceAsStream("/JNA/libTools.jnilib");
             Files.copy(in, nativeLibTmpFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
             logger.info("***************** =========================== new path: {}", nativeLibTmpFile.getAbsolutePath());
             System.load(nativeLibTmpFile.getAbsolutePath());
-
-            // System.load("/Users/mac/working/javaWorking/program/test-123/src/main/java/JNI/libTools.jnilib");
         } catch (Exception e) {
             e.printStackTrace();
-            logger.error("******* Failed to load lib: {}", e.getMessage());
-        }
-    }
-
-    public void test() {
-        JavaShellTest javaShellTest = new JavaShellTest();
-        try {
-            String cmd = "ls -alh \n pwd";
-            String file = javaShellTest.makeShell(cmd, "abc-123.sh");
-            javaShellTest.runShell(javaShellTest.getLogFile(file), "log.log");
-        } catch (Exception e) {
-            e.printStackTrace();
-            logger.error(" error: {}", e.getMessage());
+            logger.error("*********+++++++++======================= Failed to load lib: {}", e.getMessage());
         }
     }
 
