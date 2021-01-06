@@ -10,3 +10,4 @@ PGID=`ps j -A | grep 'xxxxx' | grep -v 'grep' | awk '{print  $3}'`
 kill -SIGTERM -- -${PGID}
 ```
 * set the progress [PGID](https://man7.org/linux/man-pages/man2/setpgid.2.html) and [SID](https://man7.org/linux/man-pages/man2/setsid.2.html)
+* you can load the JNA/JNI from the jar, and don't need to set it in the classpath
